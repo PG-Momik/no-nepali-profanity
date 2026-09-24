@@ -1,19 +1,12 @@
-// Writes words.csv from the compiled lexicon (run `npm run build` first).
-// Columns: kind (word | stem | phrase | suffix | leet), word (Latin form), devanagari (paired spelling or "").
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { lexicon } from "../dist/index.js";
 
-// Mapping dictionary for Latin-to-Devanagari pairings.
-// Extended to cover all new terms added in the updated lexicon.
 const PAIRED = {
-  // English (Latin only)
   fuck: "", fuk: "", fck: "", phuck: "", shit: "", shitty: "", shithead: "", bullshit: "", bitch: "", bastard: "",
   ass: "", asshole: "", arsehole: "", dumbass: "", dick: "", dickhead: "", cunt: "", whore: "", slut: "", piss: "",
   cock: "", pussy: "", twat: "", wanker: "", retard: "", idiot: "", stupid: "", moron: "",
-
-  // Romanized Nepali / Hindi & Slang
   muji: "मुजी", mujhi: "मुजी", muzi: "मुजी", machikne: "माचिक्ने", machhikne: "माचिक्ने", mchikne: "मचिक्ने", mcikne: "माचिक्ने",
   machikney: "माचिक्ने", randi: "रण्डी", raandi: "रांडी", rando: "रण्डो", rande: "राण्डे", radi: "राडी", lado: "लाडो",
   lodo: "लोडो", puti: "पुती", geda: "गेडा", jatha: "जाठा", jantha: "जांठा", jathya: "जाठ्या", chikne: "चिक्ने", chikney: "चिक्ने",
@@ -27,17 +20,11 @@ const PAIRED = {
   paji: "पाजी", moot: "मूत", bhate: "भाते", chhura: "छुरा", turi: "तुरी", pakhe: "पाखे", condo: "कोंडो", kando: "काण्डो",
   chaak: "चाक", gula: "गुला", bajiya: "बजिया", torpe: "टोर्पे", mukhulla: "मुखुल्ला", gobre: "गोबरे", bhusya: "भुस्या",
   dhurt: "धूर्त", kano: "कानो", lato: "लाटो", lati: "लाटी",
-
-  // Stems
   motherfuck: "", asshol: "", wank: "", behench: "बहनच", bhench: "भेनच", chikn: "चिक्न", chickn: "चिक्न",
   machikn: "माचिक्न", mchikn: "मचिक्न", chutiy: "चुतिय", bhosd: "भोस्ड", madarch: "मादरच", rand: "रण्ड", jath: "जाठ",
   cond: "कोंड", kand: "कान्ड",
-
-  // Phrases
   "chaak ko pwal": "चाकको प्वाल", "pesa garne": "पेसा गर्ने", "sasto manche": "सस्तो मान्छे", "tero aama ko": "तेरो आमाको",
   "muji jasto": "मुजी जस्तो", "lado khaye": "लाडो खाए", "randi ko choro": "राण्डीको छोरो", "gand mara": "गाण्ड मरा",
-
-  // Suffixes
   haruko: "हरूको", harule: "हरूले", haru: "हरू", ko: "को", ki: "की", ka: "का", le: "ले", lai: "लाई", ma: "मा",
   bata: "बाट", sanga: "संग", ni: "नि", ne: "ने", yo: "यो"
 };
@@ -45,22 +32,18 @@ const PAIRED = {
 const rows = [];
 const push = (kind, word, devanagari) => rows.push([kind, word ?? "", devanagari ?? ""]);
 
-// Process Latin words with their paired Devanagari translation if available
 for (const w of lexicon.LATIN_WORDS) push("word", w, PAIRED[w] ?? "");
 
-// Process standalone Devanagari words that aren't already paired in the dict
 const pairedDevValues = new Set(Object.values(PAIRED).filter(Boolean));
 for (const d of lexicon.DEVANAGARI_WORDS) {
   if (!pairedDevValues.has(d)) push("word", "", d);
 }
 
-// Stems
 for (const s of lexicon.LATIN_STEMS) push("stem", s, PAIRED[s] ?? "");
 for (const d of lexicon.DEVANAGARI_STEMS) {
   if (!pairedDevValues.has(d)) push("stem", "", d);
 }
 
-// Phrases
 for (const p of lexicon.LATIN_PHRASES) push("phrase", p, PAIRED[p] ?? "");
 if (lexicon.DEVANAGARI_PHRASES) {
   for (const d of lexicon.DEVANAGARI_PHRASES) {
@@ -68,13 +51,11 @@ if (lexicon.DEVANAGARI_PHRASES) {
   }
 }
 
-// Suffixes
 for (const s of lexicon.LATIN_SUFFIXES) push("suffix", s, PAIRED[s] ?? "");
 for (const d of lexicon.DEVANAGARI_SUFFIXES) {
   if (!pairedDevValues.has(d)) push("suffix", "", d);
 }
 
-// CSV Escaping Utility
 const csv = (v) => (v && /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 const out = [["kind", "word", "devanagari"], ...rows.map((r) => r.map(csv).join(","))].join("\n") + "\n";
 

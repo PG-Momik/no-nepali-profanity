@@ -1,23 +1,8 @@
-// Words to refuse in user-written text. Kept apart from the matcher (./index.ts) so the
-// list can grow on its own and be reviewed by Nepali speakers.
-//
-// Terms are written in their normal spelling. The matcher (./index.ts) undoes leetspeak ("sh1t"), joins spelled-out
-// letters ("f.u.c.k"), strips Nepali postpositions ("mujiko"), and for words of 4+ letters also undoes stretched
-// letters ("fuuuck"). Short words ("ass") must match exactly, so ordinary words ("as", "class") never do.
-//
-// Deliberately NOT here: caste names, surnames, or ordinary words that are only offensive in context ("kami",
-// "kukur" = dog). Those belong to human moderation: a word list would block real people's names. Stems (below) are
-// chosen so no ordinary word or common Nepali name starts with them ("shit" is NOT a stem: "Shitij" is a name).
-
-// Lexicon containing English, Romanized Nepali, and Devanagari terms.
-
 export const LATIN_WORDS: readonly string[] = [
-  // English
   "fuck", "fuk", "fck", "phuck", "shit", "shitty", "shithead", "bullshit", "bitch", "bastard", "ass", "asshole",
   "arsehole", "dumbass", "dick", "dickhead", "cunt", "whore", "slut", "piss", "cock", "pussy", "twat", "wanker",
   "retard", "idiot", "stupid", "moron",
-  // Romanized Nepali & Dialects
-  "muji", "mujhi", "muzi", "machikne", "ma  chhikne", "mchikne", "mcikne", "machikney", "randi", "raandi", "rando", "rande",
+  "muji", "mujhi", "muzi", "machikne", "machhikne", "mchikne", "mcikne", "machikney", "randi", "raandi", "rando", "rande",
   "radi", "lado", "lodo", "puti", "geda", "jatha", "jantha", "jathya", "chikne", "chikney", "bhalu", "khate", "harami",
   "gandu", "chutiya", "chutia", "bhosdi", "bhosadi", "bhosdike", "bsdk", "kutta", "kutti", "kuttiya", "madarchod",
   "behenchod", "bhenchod", "murkha", "badmas", "sala", "saley", "sali", "chhakka", "lauro", "chhucho", "chhuchi",
@@ -55,7 +40,6 @@ export const DEVANAGARI_PHRASES: readonly string[] = [
   "चाकको प्वाल", "चाक को प्वाल", "पेसा गर्ने", "सस्तो मान्छे", "तेरो आमाको", "राण्डीको छोरो", "गाण्ड मरा"
 ];
 
-// Ensure suffixes are sorted by length DESCENDING to guarantee greedy stripping
 export const LATIN_SUFFIXES: readonly string[] = [
   "haruko", "harule", "haru", "sanga", "bata", "lai", "ko", "ki", "ka", "le", "ma", "ni", "ne", "yo"
 ].sort((a, b) => b.length - a.length);

@@ -1,12 +1,3 @@
-// A small profanity matcher for English, Romanized Nepali and Devanagari Nepali. Pure, dependency-free, and kept in
-// its own module with its word list (./lexicon.ts).
-//
-// What it handles: case, Unicode forms, leetspeak ("sh1t", "@ss"), dodges with "!" for i inside a word ("sh!t",
-// while sentence-final "!" is left alone) and with "*" for a hidden letter ("f*ck", "sh*t"), stretched letters
-// ("fuuuck", for words of 4+ letters), letters spelled out with separators ("f.u.c.k", "f u c k", "f-u-c-k"), Nepali
-// postpositions glued on ("mujiko", "मुजीको"), and Devanagari spelling variants (nukta, chandrabindu vs anusvara,
-// zero-width joiners).
-// What it does not: judge context, sarcasm or slurs that are also ordinary words. That is human moderation.
 import {
   DEVANAGARI_PHRASES,
   DEVANAGARI_STEMS,
@@ -19,14 +10,7 @@ import {
 } from "./lexicon.js";
 
 const LEET: Record<string, string> = {
-  "0": "o",
-  "1": "i",
-  "3": "e",
-  "4": "a",
-  "5": "s",
-  "7": "t",
-  "@": "a",
-  "$": "s",
+  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s",
 };
 
 const MIN_COLLAPSE = 4;
@@ -38,9 +22,9 @@ const squeeze = (s: string) => s.replace(/(.)\1{2,}/g, "$1$1");
 function normalizeDevanagari(s: string): string {
   return s
     .normalize("NFC")
-    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "") // Zero-width spaces & joiners
-    .replace(/़/g, "")                         // Nukta
-    .replace(/ँ/g, "ं");                        // Chandrabindu -> Anusvara
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "")
+    .replace(/़/g, "")
+    .replace(/ँ/g, "ं");
 }
 
 function normalizeLatin(s: string): string {
@@ -61,18 +45,16 @@ const LATIN_STEMS_COLLAPSED = LATIN_STEMS.map((s) => collapse(normalizeLatin(s))
 
 const DEV_WORDS = new Set(DEVANAGARI_WORDS.map(normalizeDevanagari));
 const DEV_STEMS = DEVANAGARI_STEMS.map(normalizeDevanagari);
-const DEV_SUFFIXES = DEVANAGARI_SUFFIXES; // Pre-sorted by length in lexicon
+const DEV_SUFFIXES = DEVANAGARI_SUFFIXES; 
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Multi-word pre-compiled regular expressions (Latin + Devanagari)
 const COMPILED_PHRASES = [...LATIN_PHRASES, ...DEVANAGARI_PHRASES].map((p) => {
   const norm = isDevanagari(p) ? normalizeDevanagari(p) : normalizeLatin(p);
   const body = norm.trim().split(/\s+/).map(escapeRegex).join("\\s+");
   return new RegExp(`(?:^|[^\\p{L}\\p{N}])(${body})(?![\\p{L}\\p{N}])`, "giu");
 });
 
-// Cache Wildcard Regexes to prevent re-compiling inside hot loops
 const WILDCARD_WORD_REGEXES = LATIN_WORD_LIST.map((w) => ({
   word: w,
   patternStr: w,
@@ -87,13 +69,10 @@ function wildcardTokenMatches(token: string): boolean {
   const forms = [squeeze(cleanToken), collapse(cleanToken)];
 
   return forms.some((f) => {
-    // Escape standard regex chars, convert '*' to single char wildcard '.'
     const regexPattern = new RegExp(`^${f.replace(/[*+?^${}()|[\]\\]/g, (m) => (m === "*" ? "." : "\\" + m))}$`, "i");
     
-    // Test against static words
     if (WILDCARD_WORD_REGEXES.some((item) => regexPattern.test(item.word))) return true;
 
-    // Test against stems
     return LATIN_STEMS_COLLAPSED.some((stem) => {
       if (f.length < stem.length) return false;
       const stemSub = f.slice(0, stem.length);
@@ -104,12 +83,11 @@ function wildcardTokenMatches(token: string): boolean {
 }
 
 function latinTokenMatches(token: string): boolean {
-  // Strip suffixes in greedy fashion (longest first)
   const candidates = [token];
   for (const s of LATIN_SUFFIXES) {
     if (token.endsWith(s) && token.length - s.length >= 3) {
       candidates.push(token.slice(0, -s.length));
-      break; // Stop after first (longest) suffix match
+      break; 
     }
   }
 
@@ -176,13 +154,12 @@ export function findProfanity(text: string): string[] {
     }
   }
 
-  // Check multi-word phrases across full normalized text
   const normLatin = normalizeLatin(text);
   const normDev = normalizeDevanagari(text);
 
   for (const re of COMPILED_PHRASES) {
     const target = re.source.match(/[ऀ-ॿ]/) ? normDev : normLatin;
-    re.lastIndex = 0; // Reset regex state for global matching
+    re.lastIndex = 0; 
     let match: RegExpExecArray | null;
     while ((match = re.exec(target)) !== null) {
       found.push(match[1]);
