@@ -27,7 +27,7 @@ export const WORDS: readonly LexiconEntry[] = [
 
   ...tag("romanized", "lenient", [
     "muji", "mujhi", "muzi", "machikne", "machhikne", "mchikne", "mcikne", "machikney", "randi", "raandi", "rando",
-    "rande", "radi", "lado", "lodo", "puti", "geda", "jatha", "jantha", "jathya", "chikne", "chikney", "bhalu", "khate",
+    "rande", "radi", "lado", "lodo", "puti", "geda", "jatha", "jantha", "jathya", "chikne", "chikney", "bhalu", "khate", "khatey",
     "harami", "gandu", "chutiya", "chutia", "bhosdi", "bhosadi", "bhosdike", "bsdk", "madarchod", "behenchod",
     "bhenchod", "chhakka", "lauro", "gukhane", "gand", "gaand", "gandako", "lund", "lundra", "lundri", "chod", "chodna",
     "beshya", "hijada", "kamina", "haramzada", "turi", "pakhe", "condo", "kando", "chaak", "gula", "bajiya",

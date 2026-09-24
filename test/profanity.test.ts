@@ -48,6 +48,7 @@ describe("containsProfanity", () => {
     ["Devanagari spelling from words.csv", "राण्डी"],
     ["Latin phrase from words.csv", "khatako choro"],
     ["Devanagari phrase from words.csv", "राण्डीको बान"],
+    ["spelling variant with -ey", "yo khatey payment app kahiley chaley po"],
   ])("catches %s", (_label, text) => {
     expect(containsProfanity(text)).toBe(true);
   });
