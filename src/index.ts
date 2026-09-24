@@ -37,7 +37,22 @@ export interface CensorOptions {
   replace?: (match: ProfanityMatch) => string;
 }
 
+/** The result of scanning one text: inspect it, then censor it without scanning again. */
+export interface ProfanityCheck {
+  /** The text that was checked. */
+  readonly text: string;
+  /** Whether any profanity was found. */
+  readonly hasProfanity: boolean;
+  /** The normalized words found, without duplicates. The same as findProfanity. */
+  readonly words: string[];
+  /** Every match with its position, sorted by position. The same as findProfanityMatches. */
+  readonly matches: ProfanityMatch[];
+  /** The text with every match masked. */
+  censor(options?: CensorOptions): string;
+}
+
 export interface ProfanityFilter {
+  check(text: string): ProfanityCheck;
   containsProfanity(text: string): boolean;
   findProfanity(text: string): string[];
   findProfanityMatches(text: string): ProfanityMatch[];
@@ -337,6 +352,16 @@ function censorMatches(text: string, matches: ProfanityMatch[], options: CensorO
 export function createFilter(options: FilterOptions = {}): ProfanityFilter {
   const tables = buildTables(options);
   return {
+    check: (text) => {
+      const matches = scan(tables, text);
+      return {
+        text,
+        hasProfanity: matches.length > 0,
+        words: unique(matches),
+        matches: [...matches].sort(byPosition),
+        censor: (censorOptions) => censorMatches(text, matches, censorOptions),
+      };
+    },
     containsProfanity: (text) => scan(tables, text).length > 0,
     findProfanity: (text) => unique(scan(tables, text)),
     findProfanityMatches: (text) => scan(tables, text).sort(byPosition),
@@ -354,6 +379,11 @@ function cachedFilter(options: FilterOptions = {}): ProfanityFilter {
     filterCache.set(key, filter);
   }
   return filter;
+}
+
+/** Scans the text once. Use the result to check for profanity and to censor it, e.g. check(text).censor(). */
+export function check(text: string, options?: FilterOptions): ProfanityCheck {
+  return cachedFilter(options).check(text);
 }
 
 export function containsProfanity(text: string, options?: FilterOptions): boolean {

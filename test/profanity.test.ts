@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   censor,
+  check,
   containsProfanity,
   createFilter,
   findProfanity,
@@ -241,5 +242,34 @@ describe("censor", () => {
 
   it("rejects an empty mask", () => {
     expect(() => censor("muji", { mask: "" })).toThrow(TypeError);
+  });
+});
+
+describe("check", () => {
+  it("returns everything from one scan", () => {
+    const result = check("you muji, F.U.C.K");
+    expect(result.text).toBe("you muji, F.U.C.K");
+    expect(result.hasProfanity).toBe(true);
+    expect(result.words).toEqual(["muji", "fuck"]);
+    expect(result.matches.map((m) => m.text)).toEqual(["muji", "F.U.C.K"]);
+    expect(result.censor()).toBe("you ****, *******");
+    expect(result.censor({ mask: "#" })).toBe("you ####, #######");
+  });
+
+  it("chains straight into censor", () => {
+    expect(check("you muji").censor()).toBe("you ****");
+    expect(check("Great teacher!").censor()).toBe("Great teacher!");
+  });
+
+  it("reports clean text", () => {
+    const result = check("Great teacher!");
+    expect(result.hasProfanity).toBe(false);
+    expect(result.words).toEqual([]);
+    expect(result.matches).toEqual([]);
+  });
+
+  it("respects the filter options", () => {
+    expect(check("fuck muji", { languages: ["romanized"] }).censor()).toBe("fuck ****");
+    expect(createFilter({ strictness: "lenient" }).check("you idiot").hasProfanity).toBe(false);
   });
 });

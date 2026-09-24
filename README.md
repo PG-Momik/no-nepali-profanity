@@ -25,7 +25,7 @@ TypeScript works out of the box — the `.d.ts` ship with the package.
 
 ## Usage
 
-Six functions, one lexicon module. All examples below are verified against the current build.
+Seven functions, one lexicon module. All examples below are verified against the current build.
 
 ```js
 import { containsProfanity, findProfanity, tokenize } from "no-nepali-profanity";
@@ -51,9 +51,10 @@ tokenize("Great teacher!");                 // ["great", "teacher"]
 |---|---|---|
 | `containsProfanity(text, options?)` | `boolean` | Yes/no from `findProfanity`. |
 | `findProfanity(text, options?)` | `string[]` | Matching words **normalised + lowercased** (leet decoded, case-folded), deduplicated. Empty when clean. |
+| `check(text, options?)` | `{ text, hasProfanity, words, matches, censor() }` | Scans once; inspect the result and censor it without scanning again. |
 | `findProfanityMatches(text, options?)` | `{ text, normalized, start, end }[]` | Every occurrence with its position in the original text, sorted by position. |
 | `censor(text, options?)` | `string` | The text with each match masked: `"you muji"` → `"you ****"`. Options: `mask` (default `"*"`), `replace(match)`. |
-| `createFilter(options?)` | `{ containsProfanity, findProfanity, findProfanityMatches, censor }` | Builds the tables once for fixed options. |
+| `createFilter(options?)` | `{ check, containsProfanity, findProfanity, findProfanityMatches, censor }` | Builds the tables once for fixed options. |
 | `tokenize(text)` | `string[]` | Raw tokens the matcher sees. Useful for debugging why a word is (or isn't) caught. |
 | `lexicon` | module | Tagged entries (`WORDS`, `STEMS`, `PHRASES`), flat per-script lists (`LATIN_WORDS`, `DEVANAGARI_WORDS`…) and suffixes. |
 
@@ -65,6 +66,17 @@ censor("F.U.C.K this Sh1t!");                          // "******* this ****!"
 censor("you muji", { mask: "#" });                    // "you ####"
 censor("you muji", { replace: () => "[censored]" });  // "you [censored]"
 findProfanityMatches("you muji");                     // [{ text: "muji", normalized: "muji", start: 4, end: 8 }]
+```
+
+Check and censor in one pass:
+
+```js
+const result = check("you muji");
+result.hasProfanity;   // true
+result.words;          // ["muji"]
+result.censor();       // "you ****"
+
+check("you muji").censor();   // "you ****"
 ```
 
 ### Options
