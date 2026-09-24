@@ -19,12 +19,20 @@ export const LATIN_WORDS: readonly string[] = [
   "muji", "mujhi", "muzi", "machikne", "machhikne", "mchikne", "machikney", "randi", "raandi", "rando", "lado",
   "puti", "geda", "jatha", "chikne", "chikney", "bhalu", "khate", "harami", "gandu", "chutiya", "chutia", "bhosdi",
   "bhosadi", "bhosdike", "kutta", "kutti", "kuttiya", "madarchod", "behenchod", "bhenchod",
+  // Additional common invectives (see README: ordinary words like "kukur", "pagal", "pesa" are deliberately absent)
+  "murkha", "badmas", "sala", "saley", "sali", "rande", "chhakka", "lauro", "chhucho", "chhuchi", "jantha", "gu",
+  "gukhane", "gand", "gandako", "lund", "lundra", "lundri", "lodo", "chod", "chodna", "kichkich", "thukk", "nalayak",
+  "beijjat", "nikamma", "fohor", "ghinlagdo", "nindaniya", "beshya", "hijada", "kamina", "haramzada", "paji", "radi",
+  "moot",
+  // Additional terms supplied for review by a native speaker
+  "bhate", "chhura", "turi", "pakhe", "condo", "chaak", "gula", "bajiya", "torpe", "mukhulla", "gobre", "bhusya",
+  "dhurt",
 ];
 
 /** Latin stems: a word starting with one of these is refused ("fucking", "bitches", "machiknee", "retarded"). */
 export const LATIN_STEMS: readonly string[] = [
   "fuck", "motherfuck", "bitch", "bastard", "asshol", "cunt", "whore", "slut", "wank", "retard", "machikn", "chutiy",
-  "bhosd", "madarch", "behench", "bhench",
+  "bhosd", "madarch", "behench", "bhench", "chikn", "chickn", "chod", "lund",
 ];
 
 /** Whole words, Devanagari: Nepali, and Hindi slang common in Nepal. */
@@ -32,10 +40,22 @@ export const DEVANAGARI_WORDS: readonly string[] = [
   "मुजी", "मुजि", "माचिक्ने", "मचिक्ने", "रण्डी", "रन्डी", "रंडी", "रांडी", "लाडो", "लांडो", "पुती", "गेडा", "जाठा",
   "चिक्ने", "भालु", "खाते", "हरामी", "गान्डु", "गांडु", "चुतिया", "भोस्डी", "भोसडी", "कुत्ता", "कुत्ती", "मादरचोद",
   "बहनचोद", "भेनचोद",
+  // Additional common invectives
+  "मुर्ख", "मूर्ख", "बदमास", "साला", "साली", "रांडे", "छक्का", "लौरो", "छुच्चो", "छुच्ची", "जांठा", "गु", "गुखाने",
+  "गान्ड", "लुंड", "लोडो", "चोद", "चोद्ना", "किचकिच", "थुक", "नालायक", "बेइज्जत", "निकम्मा", "फोहर", "फोहोर",
+  "घिनलाग्दो", "निन्दनीय", "वेश्या", "हिजडा", "कमिना", "हरामजादा", "पाजी", "राडी", "मूत",
+  // Devanagari spellings supplied for native-speaker review
+  "चाक", "गुला", "बजिया", "गोबरे", "धूर्त",
+  // Devanagari for the remaining romanized terms
+  "रण्डो", "भोस्डीके", "कुत्तिया", "गान्डको", "लुन्ड्रा", "लुन्ड्री", "साले", "भाते", "छुरा", "तुरी", "पाखे",
+  "कोंडो", "टोर्पे", "मुखुल्ला", "भुस्या",
 ];
 
+/** Multi-word insults, matched as a whole ("chaak ko pwal", "pesa garne", "sasto manche"). Latin only for now. */
+export const LATIN_PHRASES: readonly string[] = ["chaak ko pwal", "pesa garne", "sasto manche"];
+
 /** Devanagari stems (see LATIN_STEMS). */
-export const DEVANAGARI_STEMS: readonly string[] = ["माचिक्न", "मचिक्न", "चुतिय", "भोस्ड", "मादरच"];
+export const DEVANAGARI_STEMS: readonly string[] = ["माचिक्न", "मचिक्न", "चुतिय", "भोस्ड", "मादरच", "चोद"];
 
 /** Nepali postpositions and plural endings that can be glued to a word ("mujiko", "मुजीको", "randiharu"). */
 export const LATIN_SUFFIXES: readonly string[] = ["haruko", "harule", "haru", "ko", "ki", "ka", "le", "lai", "ma", "bata", "sanga"];

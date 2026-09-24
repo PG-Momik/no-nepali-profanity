@@ -15,12 +15,15 @@ findProfanity("f.u.c.k this sh1t");       // ["fuck", "shit"]
 ## What it catches
 
 - **Case and Unicode forms**: `IDIOT`, full-width letters.
-- **Leetspeak**: `sh1t`, `@ss` (`0 1 3 4 5 7 @ $`; `!` is left alone because it ends sentences).
+- **Leetspeak**: `sh1t`, `@ss` (`0 1 3 4 5 7 @ $`).
+- **`!` for `i` inside a word**: `sh!t`, `b!tch`. Sentence-final `Great teacher!` is left alone.
+- **`*` for a hidden letter**: `f*ck`, `sh*t`, and markdown emphasis like `*sh*t*` still reads as the word.
 - **Stretched letters**: `fuuuuck`, for words of 4+ letters.
 - **Spelled-out letters**: `f.u.c.k`, `f u c k`, `m u j i`.
 - **Nepali postpositions and plurals glued on**: `mujiko`, `randiharu`, `मुजीको`, `…हरू`.
 - **Devanagari spelling variants**: nukta, chandrabindu vs anusvara, zero-width joiners.
 - **Stems** where no ordinary word starts the same way: `fucking`, `bitches`, `machiknee`.
+- **Multi-word phrases**: `chaak ko pwal`, `pesa garne`, `sasto manche` (Latin only).
 
 ## What it deliberately doesn't
 
@@ -38,7 +41,7 @@ findProfanity("f.u.c.k this sh1t");       // ["fuck", "shit"]
 | `containsProfanity(text): boolean` | Whether any word matches. |
 | `findProfanity(text): string[]` | The matching words, normalised. Empty when clean. |
 | `tokenize(text): string[]` | The words the matcher sees (useful for debugging). |
-| `lexicon` | The word lists: `LATIN_WORDS`, `LATIN_STEMS`, `DEVANAGARI_WORDS`, `DEVANAGARI_STEMS`, and the suffix lists. |
+| `lexicon` | The word lists: `LATIN_WORDS`, `LATIN_STEMS`, `DEVANAGARI_WORDS`, `DEVANAGARI_STEMS`, `LATIN_PHRASES`, and the suffix lists. |
 
 ## Contributing words
 
