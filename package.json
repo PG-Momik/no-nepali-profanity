@@ -1,0 +1,30 @@
+{
+  "name": "nepali-profanity-filter",
+  "version": "0.1.0",
+  "description": "Profanity matcher for English, Romanized Nepali and Devanagari Nepali: leetspeak, stretched and spelled-out letters, Nepali postpositions, with care not to block real names.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": ["profanity", "filter", "nepali", "devanagari", "moderation", "bad-words"],
+  "author": "PG-Momik",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}
