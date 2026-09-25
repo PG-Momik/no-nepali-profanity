@@ -39,7 +39,7 @@ containsProfanity("मुजीको कक्षा");           // true  (Dev
 findProfanity("f.u.c.k this sh1t");        // ["fuck", "shit"]
 findProfanity("f u c k this");              // ["fuck"]
 findProfanity("Randip Thapa");              // []
-findProfanity("*ss teacher");               // []           ⚠️ not yet caught — see Known issues
+findProfanity("*ss teacher");               // ["*ss"]
 
 // debugging — see what the matcher actually splits into
 tokenize("Great teacher!");                 // ["great", "teacher"]
@@ -96,7 +96,8 @@ findProfanity("terms and conditions", { strictness: "strict" });   // ["conditio
 - **Case and Unicode forms**: `IDIOT`, full-width letters.
 - **Leetspeak**: `sh1t`, `@ss` (`0 1 3 4 5 7 @ $`).
 - **`!` for `i` between letters**: `sh!t`, `b!tch`. Sentence-final `Great teacher!` is left alone.
-- **`*` for a hidden letter**: `f*ck`, `sh*t`, and markdown emphasis like `*sh*t*` still reads as the word.
+- **`*` for a hidden letter**: `f*ck`, `sh*t`, `*ss`, and markdown emphasis like `*sh*t*` still reads as the word
+  while `*is*` stays clean.
 - **Stretched letters**: `fuuuuck`, for words of 4+ letters.
 - **Spelled-out letters**: `f.u.c.k`, `f u c k`.
 - **Nepali postpositions and plurals glued on**: `mujiko`, `randiharu`, `मुजीको`, `…हरू`.
@@ -112,13 +113,6 @@ findProfanity("terms and conditions", { strictness: "strict" });   // ["conditio
 - **No caste names, surnames or ordinary words that are only offensive in context** (e.g. *kami*, *kukur*). A word
   list can't tell a slur from someone's name; that needs human moderation.
 - **No judgement of context, sarcasm or meaning.** This is a first-pass filter, not a moderator.
-
-## Known issues
-
-One check in `test/profanity.test.ts` currently fails against this build. It's a real gap, not a documentation
-error:
-
-- **A wildcard for a hidden first letter isn't caught.** `*ss` (`ass` with a hidden first letter) returns `[]`.
 
 ## Development
 

@@ -189,7 +189,10 @@ function wildcardTokenMatches(tables: Tables, token: string): boolean {
   const cleanToken = token.replace(/^\*+|\*+$/g, "");
   if (!/[\p{L}]/u.test(cleanToken)) return false;
 
-  const forms = [squeeze(cleanToken), collapse(cleanToken)];
+  // "*" on both ends is markdown emphasis ("*sh*t*"). On one end only, it may also hide a first or last letter ("*ss").
+  const emphasis = token.startsWith("*") && token.endsWith("*");
+  const tokens = emphasis || cleanToken === token ? [cleanToken] : [cleanToken, token];
+  const forms = tokens.flatMap((t) => [squeeze(t), collapse(t)]);
 
   return forms.some((f) => {
     const regexPattern = wildcardRegex(f);

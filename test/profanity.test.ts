@@ -25,6 +25,7 @@ describe("containsProfanity", () => {
     ["dodging with a wildcard for a hidden letter", "f*ck this"],
     ["dodging with a wildcard for the hidden i", "sh*t"],
     ["dodging with a wildcard for the hidden first letter", "that *ss"],
+    ["dodging with a wildcard for the hidden last letter", "fuc* off"],
     ["markdown emphasis still reads the word", "*sh*t* is bad"],
     ["stretched letters", "fuuuuck"],
     ["letters spelled out with dots", "f.u.c.k"],
@@ -36,6 +37,7 @@ describe("containsProfanity", () => {
     ["exact word, not a long place name", "look at that gand"],
     ["stem catches the -ne inflected form", "chodne manche"],
     ["Devanagari invective", "मुर्ख"],
+    ["Devanagari with a doubled consonant", "थुक्क"],
     ["Devanagari slang", "कमिना"],
     ["Devanagari vulgar term", "लुंड"],
     ["multi-word phrase", "chaak ko pwal"],
@@ -75,6 +77,10 @@ describe("containsProfanity", () => {
     "No way! That can't be right",
     "the starred items are on page 12*",
     "feed ** me ** the list",
+    // Markdown emphasis around an ordinary word must not read the asterisks as hidden letters
+    "this *is* good",
+    "*and* then",
+    "**hi** there",
     // Ordinary words that must not start matching the new stems
     "chicken biryani is good",
     "the salaam greeting sounded nice",
