@@ -56,7 +56,7 @@ tokenize("Great teacher!");                 // ["great", "teacher"]
 | `censor(text, options?)` | `string` | The text with each match masked: `"you muji"` → `"you ****"`. Options: `mask` (default `"*"`), `replace(match)`. |
 | `createFilter(options?)` | `{ check, containsProfanity, findProfanity, findProfanityMatches, censor }` | Builds the tables once for fixed options. |
 | `tokenize(text)` | `string[]` | Raw tokens the matcher sees. Useful for debugging why a word is (or isn't) caught. |
-| `lexicon` | module | Tagged entries (`WORDS`, `STEMS`, `PHRASES`), flat per-script lists (`LATIN_WORDS`, `DEVANAGARI_WORDS`…) and suffixes. |
+| `lexicon` | module | Tagged entries (`WORDS`, `STEMS`, `PHRASES`, `INFIXES`), the `ALLOWED` list, flat per-script lists (`LATIN_WORDS`, `DEVANAGARI_WORDS`…) and suffixes. |
 
 ### Censoring
 
@@ -84,12 +84,14 @@ check("you muji").censor();   // "you ****"
 ```js
 findProfanity("fuck muji मुजी", { languages: ["romanized"] });      // ["muji"]
 containsProfanity("you idiot", { strictness: "lenient" });         // false
-findProfanity("terms and conditions", { strictness: "strict" });   // ["conditions"]
+findProfanity("damn it", { strictness: "strict" });   // ["damn"]
 ```
 
 - `languages`: any of `"english"`, `"romanized"`, `"devanagari"`. Default: all three.
 - `strictness`: `"lenient"` (severe words only), `"standard"` (default, adds milder insults like `idiot`, `murkha`) or
-  `"strict"` (adds the stems `rand`, `cond`, `kand`, `lund`, which also hit words like `Randip` and `conditions`).
+  `"strict"` (adds entries that are also ordinary words, like `damn`, and the stems `rand`, `cond`, `kand`, `lund`;
+  names they would hit, like `Randip`, are on a built-in allow list).
+- `extraWords`: more words to flag. `allowWords`: words never to flag, such as names on your site.
 
 ## What it catches
 

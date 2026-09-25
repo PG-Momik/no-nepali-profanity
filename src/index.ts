@@ -1,5 +1,7 @@
 import {
+  ALLOWED,
   DEVANAGARI_SUFFIXES,
+  INFIXES,
   LATIN_SUFFIXES,
   PHRASES,
   STEMS,
@@ -16,6 +18,10 @@ export interface FilterOptions {
   languages?: readonly Language[];
   /** How much to catch. Defaults to "standard". */
   strictness?: Strictness;
+  /** More words to flag, at every strictness. Matched like the built-in words: leetspeak, stretching, postpositions. */
+  extraWords?: readonly string[];
+  /** Words never to flag, such as names on your site. A word here is also allowed with a postposition. */
+  allowWords?: readonly string[];
 }
 
 /** One place where profanity was found in the original text. */
@@ -63,7 +69,14 @@ const LANGUAGES: readonly Language[] = ["english", "romanized", "devanagari"];
 const STRICTNESS_LEVEL: Record<Strictness, number> = { lenient: 0, standard: 1, strict: 2 };
 
 const LEET: Record<string, string> = {
-  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s",
+  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "9": "g", "@": "a", "$": "s", "€": "e",
+};
+
+// Cyrillic and Greek letters that look like Latin ones, so "fuсk" with a Cyrillic с still reads as "fuck".
+const CONFUSABLES: Record<string, string> = {
+  "а": "a", "в": "b", "е": "e", "ё": "e", "к": "k", "м": "m", "н": "h", "о": "o", "р": "p", "с": "c", "т": "t",
+  "у": "y", "х": "x", "ѕ": "s", "і": "i", "ї": "i", "ј": "j", "ԁ": "d", "α": "a", "β": "b", "ε": "e", "ι": "i",
+  "κ": "k", "ν": "v", "ο": "o", "ρ": "p", "τ": "t", "υ": "u", "χ": "x",
 };
 
 const MIN_COLLAPSE = 4;
@@ -71,6 +84,11 @@ const MIN_COLLAPSE = 4;
 const isDevanagari = (s: string) => /[ऀ-ॿ]/.test(s);
 const collapse = (s: string) => s.replace(/(.)\1+/g, "$1");
 const squeeze = (s: string) => s.replace(/(.)\1{2,}/g, "$1$1");
+
+// Romanized Nepali writes छ as chh or x. Romanized entries and tokens are both folded to x before they're compared,
+// so xakka matches chhakka. It also keeps छ apart from च once letters are collapsed, so chhod ("leave") no longer
+// matches the stem chod.
+const romanize = (s: string) => squeeze(s).replace(/chh/g, "x");
 
 /**
  * Normalized text, plus the span of the original text that each normalized UTF-16 unit came from, so a match
@@ -92,10 +110,9 @@ function normalizeChar(ch: string): string {
     // Decompose so a precomposed nukta letter (ऩ) loses its nukta too, and fold chandrabindu into anusvara.
     return ch.normalize("NFD").replace(/़/g, "").replace(/ँ/g, "ं");
   }
-  return ch
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[0-9@$]/g, (c) => LEET[c] ?? c);
+  // Accents are removed, so "fück" reads as "fuck".
+  const folded = ch.normalize("NFKC").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  return [...folded].map((c) => LEET[c] ?? CONFUSABLES[c] ?? c).join("");
 }
 
 function normalize(input: string): Normalized {
@@ -143,10 +160,20 @@ const wildcardRegex = (s: string) =>
 interface Tables {
   latinExact: Set<string>;
   latinCollapsed: Set<string>;
-  latinWords: string[];
   latinStems: string[];
+  romanExact: Set<string>;
+  romanCollapsed: Set<string>;
+  romanStems: string[];
+  /** Every Latin word and stem, unfolded, for wildcard tokens. */
+  wildWords: string[];
+  wildStems: string[];
+  infixes: string[];
+  /** The infixes with no doubled letter, which are also looked for in the collapsed token. */
+  plainInfixes: string[];
+  allowed: Set<string>;
   devWords: Set<string>;
   devStems: string[];
+  devAllowed: Set<string>;
   phrases: RegExp[];
 }
 
@@ -161,26 +188,51 @@ function buildTables(options: FilterOptions): Tables {
     throw new TypeError(`Unknown strictness "${strictness}". Use one of: ${Object.keys(STRICTNESS_LEVEL).join(", ")}.`);
   }
 
-  const active = (entries: readonly LexiconEntry[], devanagari: boolean) =>
-    entries
-      .filter((e) => languages.has(e.language) && STRICTNESS_LEVEL[e.strictness] <= level)
-      .filter((e) => (e.language === "devanagari") === devanagari)
-      .map((e) => normalizeText(e.text));
+  const extraWords = stringList(options.extraWords, "extraWords").map(normalizeText);
+  const allowWords = [...ALLOWED, ...stringList(options.allowWords, "allowWords")].map(normalizeText);
 
-  const latinWords = active(WORDS, false);
+  const active = (entries: readonly LexiconEntry[], language: Language) =>
+    languages.has(language)
+      ? entries
+          .filter((e) => e.language === language && STRICTNESS_LEVEL[e.strictness] <= level)
+          .map((e) => normalizeText(e.text))
+      : [];
+
+  // Extra words count as English: matched as they are, without the Romanized spelling folds.
+  const englishWords = [...active(WORDS, "english"), ...extraWords.filter((w) => !isDevanagari(w))];
+  const romanWords = active(WORDS, "romanized").map(romanize);
+  const englishStems = active(STEMS, "english");
+  const romanStems = active(STEMS, "romanized");
+  const infixes = active(INFIXES, "english").map(squeeze);
 
   return {
-    latinExact: new Set(latinWords.map(squeeze)),
-    latinCollapsed: new Set(latinWords.map(collapse).filter((w) => w.length >= MIN_COLLAPSE)),
-    latinWords: latinWords.map(squeeze),
-    latinStems: active(STEMS, false).map(collapse),
-    devWords: new Set(active(WORDS, true)),
-    devStems: active(STEMS, true),
-    phrases: [...active(PHRASES, false), ...active(PHRASES, true)].map((p) => {
+    latinExact: new Set(englishWords.map(squeeze)),
+    latinCollapsed: new Set(englishWords.map(collapse).filter((w) => w.length >= MIN_COLLAPSE)),
+    latinStems: englishStems.map(collapse),
+    romanExact: new Set(romanWords),
+    romanCollapsed: new Set(romanWords.map(collapse).filter((w) => w.length >= MIN_COLLAPSE)),
+    romanStems: romanStems.map((s) => collapse(romanize(s))),
+    wildWords: [...englishWords, ...active(WORDS, "romanized")].map(squeeze),
+    wildStems: [...englishStems, ...romanStems].map(collapse),
+    infixes,
+    plainInfixes: infixes.filter((i) => collapse(i) === i),
+    allowed: new Set(allowWords.filter((w) => !isDevanagari(w)).map(squeeze)),
+    devWords: new Set([...active(WORDS, "devanagari"), ...extraWords.filter(isDevanagari)]),
+    devStems: active(STEMS, "devanagari"),
+    devAllowed: new Set(allowWords.filter(isDevanagari)),
+    phrases: [...active(PHRASES, "english"), ...active(PHRASES, "romanized"), ...active(PHRASES, "devanagari")].map((p) => {
       const body = p.trim().split(/\s+/).map(escapeRegex).join("\\s+");
       return new RegExp(`(?:^|[^\\p{L}\\p{N}])(${body})(?![\\p{L}\\p{N}])`, "giud");
     }),
   };
+}
+
+function stringList(value: readonly string[] | undefined, name: string): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((w) => typeof w !== "string")) {
+    throw new TypeError(`${name} must be an array of strings.`);
+  }
+  return value.map((w) => w.trim()).filter(Boolean);
 }
 
 function wildcardTokenMatches(tables: Tables, token: string): boolean {
@@ -196,9 +248,9 @@ function wildcardTokenMatches(tables: Tables, token: string): boolean {
 
   return forms.some((f) => {
     const regexPattern = wildcardRegex(f);
-    if (tables.latinWords.some((w) => regexPattern.test(w))) return true;
+    if (tables.wildWords.some((w) => regexPattern.test(w))) return true;
 
-    return tables.latinStems.some((stem) => {
+    return tables.wildStems.some((stem) => {
       if (f.length < stem.length) return false;
       return wildcardRegex(f.slice(0, stem.length)).test(stem);
     });
@@ -214,13 +266,22 @@ function latinTokenMatches(tables: Tables, token: string): boolean {
     }
   }
 
+  if (candidates.some((t) => tables.allowed.has(squeeze(t)))) return false;
+
   return candidates.some((t) => {
     const squeezed = squeeze(t);
     const collapsed = collapse(t);
+    const roman = romanize(t);
+    const romanCollapsed = collapse(roman);
     return (
       tables.latinExact.has(squeezed) ||
       (collapsed.length >= MIN_COLLAPSE && tables.latinCollapsed.has(collapsed)) ||
       tables.latinStems.some((stem) => collapsed.startsWith(stem)) ||
+      tables.romanExact.has(roman) ||
+      (romanCollapsed.length >= MIN_COLLAPSE && tables.romanCollapsed.has(romanCollapsed)) ||
+      tables.romanStems.some((stem) => romanCollapsed.startsWith(stem)) ||
+      tables.infixes.some((i) => squeezed.includes(i)) ||
+      tables.plainInfixes.some((i) => collapsed.includes(i)) ||
       wildcardTokenMatches(tables, t)
     );
   });
@@ -235,6 +296,7 @@ function devanagariTokenMatches(tables: Tables, token: string): boolean {
     }
   }
 
+  if (candidates.some((t) => tables.devAllowed.has(t))) return false;
   return candidates.some((t) => tables.devWords.has(t) || tables.devStems.some((stem) => t.startsWith(stem)));
 }
 
@@ -274,6 +336,49 @@ function tokenSpans(n: Normalized): Span[] {
   return tokens;
 }
 
+// Characters that can split a word without a space: "sh.it", "fu-ck", "b_i_tch".
+const GLUE = /^[._\-~'`]+$/;
+const MAX_GLUED_PIECES = 6;
+const MAX_GLUED_LENGTH = 12;
+
+/**
+ * Runs of Latin letters split only by GLUE characters, read as one word. A run is joined only if one of its pieces is
+ * three letters or fewer and the joined word is at most 12 letters, so "shital.shrestha" in an email address stays
+ * two words.
+ */
+function gluedSpans(n: Normalized): Span[] {
+  const runs: { value: string; from: number; to: number }[] = [];
+  for (const m of n.text.matchAll(/[\p{L}\p{M}*]+/gu)) {
+    if (!isDevanagari(m[0])) runs.push({ value: m[0], from: m.index!, to: m.index! + m[0].length });
+  }
+
+  const spans: Span[] = [];
+  let group: typeof runs = [];
+  const flush = () => {
+    const length = group.reduce((sum, r) => sum + r.value.length, 0);
+    if (
+      group.length >= 2 &&
+      group.length <= MAX_GLUED_PIECES &&
+      length <= MAX_GLUED_LENGTH &&
+      group.some((r) => r.value.length <= 3)
+    ) {
+      spans.push({
+        value: group.map((r) => r.value).join(""),
+        start: n.starts[group[0].from],
+        end: n.ends[group[group.length - 1].to - 1],
+      });
+    }
+    group = [];
+  };
+  for (const r of runs) {
+    const prev = group[group.length - 1];
+    if (!prev || !GLUE.test(n.text.slice(prev.to, r.from))) flush();
+    group.push(r);
+  }
+  flush();
+  return spans;
+}
+
 export function tokenize(text: string): string[] {
   if (!text) return [];
   return tokenSpans(normalize(text)).map((t) => t.value);
@@ -297,6 +402,12 @@ function scan(tables: Tables, text: string): ProfanityMatch[] {
     if (isDevanagari(t.value) ? devanagariTokenMatches(tables, t.value) : latinTokenMatches(tables, t.value)) {
       found.push(match(t.value, t.start, t.end));
     }
+  }
+
+  // A glued word is only read joined when none of its pieces matched on its own.
+  for (const g of gluedSpans(n)) {
+    if (found.some((m) => m.start < g.end && g.start < m.end)) continue;
+    if (latinTokenMatches(tables, g.value)) found.push(match(g.value, g.start, g.end));
   }
 
   for (const re of tables.phrases) {
@@ -375,7 +486,12 @@ export function createFilter(options: FilterOptions = {}): ProfanityFilter {
 const filterCache = new Map<string, ProfanityFilter>();
 
 function cachedFilter(options: FilterOptions = {}): ProfanityFilter {
-  const key = `${options.strictness ?? ""}|${[...(options.languages ?? LANGUAGES)].sort().join(",")}`;
+  const key = JSON.stringify([
+    options.strictness ?? "",
+    [...(options.languages ?? LANGUAGES)].sort(),
+    options.extraWords ?? [],
+    options.allowWords ?? [],
+  ]);
   let filter = filterCache.get(key);
   if (!filter) {
     filter = createFilter(options);
