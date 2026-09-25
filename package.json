@@ -23,6 +23,11 @@
   "author": "PG-Momik",
   "license": "MIT",
   "homepage": "https://mukhxadnahunna.com/js/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PG-Momik/no-nepali-profanity.git"
+  },
+  "bugs": "https://github.com/PG-Momik/no-nepali-profanity/issues",
   "engines": { "node": ">=18" },
   "devDependencies": {
     "typescript": "^5",
