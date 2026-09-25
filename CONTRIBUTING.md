@@ -9,7 +9,7 @@ The full guide, including the rules for adding a word, is at
 
 ## Reporting a problem
 
-All the ports share one issue tracker:
+Open an issue in this repository:
 [github.com/PG-Momik/no-nepali-profanity/issues](https://github.com/PG-Momik/no-nepali-profanity/issues). Include:
 
 - the **exact input text**,
