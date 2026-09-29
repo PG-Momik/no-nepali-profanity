@@ -1,7 +1,7 @@
 # no-nepali-profanity
 
 A small, **dependency-free** profanity matcher for **English**, **Romanized (Latin) Nepali** and **Devanagari Nepali**,
-plus the Hindi slang common in Nepal. Built for moderating user-written text — names, comments, reviews — on Nepali
+plus the Hindi slang common in Nepal. Built for moderating user-written text (names, comments, reviews) on Nepali
 sites, where false positives on real names are more damaging than a missed swear.
 
 Zero runtime dependencies. TypeScript, ships pre-built ESM (`dist/`) with `.d.ts` typings, published as a Node package
@@ -21,7 +21,7 @@ Requires Node 18+ (uses `String.prototype.normalize` and Unicode property regex 
 import { containsProfanity, findProfanity, tokenize } from "no-nepali-profanity";
 ```
 
-TypeScript works out of the box — the `.d.ts` ship with the package.
+TypeScript works out of the box; the `.d.ts` ship with the package.
 
 ## Usage
 
@@ -30,18 +30,18 @@ Seven functions, one lexicon module. All examples below are verified against the
 ```js
 import { containsProfanity, findProfanity, tokenize } from "no-nepali-profanity";
 
-// boolean check — fastest
+// boolean check, fastest
 containsProfanity("Great teacher!");        // false
 containsProfanity("muji");                  // true
 containsProfanity("मुजीको कक्षा");           // true  (Devanagari + postposition)
 
-// which words — returns normalised matches as they appeared
+// which words: returns normalised matches as they appeared
 findProfanity("f.u.c.k this sh1t");        // ["fuck", "shit"]
 findProfanity("f u c k this");              // ["fuck"]
 findProfanity("Randip Thapa");              // []
 findProfanity("*ss teacher");               // ["*ss"]
 
-// debugging — see what the matcher actually splits into
+// debugging: see what the matcher actually splits into
 tokenize("Great teacher!");                 // ["great", "teacher"]
 ```
 
